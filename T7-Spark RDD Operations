@@ -1,0 +1,36 @@
+// Tạo một RDD từ một mảng
+val data = Array(1, 2, 3, 4, 5)
+val rdd = sc.parallelize(data)
+
+// Thực hiện phép biến đổi và hành động trên RDD
+val squaredRDD = rdd.map(x => x * x)
+val sum = squaredRDD.reduce((x, y) => x + y)
+
+// In kết quả
+println("Squared values: " + squaredRDD.collect().mkString(", "))
+println("Sum of squared values: " + sum)
+
+// Thu thập tất cả dữ liệu từ RDD và trả về một mảng
+val resultArray = squaredRDD.collect()
+resultArray.foreach(println)
+
+// Thực hiện một hành động trên từng phần tử của RDD
+squaredRDD.foreach(x => println(x))
+
+// Trả về số phần tử trong RDD
+val count = squaredRDD.count()
+println(s"Number of elements in RDD: $count")
+
+// Trả về phần tử đầu tiên trong RDD
+val firstElement = squaredRDD.first()
+println(s"First element in RDD: $firstElement")
+
+// Lấy kết quả vào một mảng và in ra màn hình
+val resultArray = squaredRDD.collect()
+resultArray.foreach(println)
+
+// In từng phần tử của RDD ra màn hình
+squaredRDD.foreach(println)
+
+// Lưu kết quả vào tệp văn bản và sau đó đọc tệp văn bản
+squaredRDD.saveAsTextFile("output.txt")
