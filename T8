@@ -1,0 +1,68 @@
+import org.apache.spark.ml.classification.LogisticRegression
+import org.apache.spark.ml.feature.{Tokenizer, StopWordsRemover, CountVectorizer}
+import org.apache.spark.ml.{Pipeline, PipelineModel}
+import org.apache.spark.sql.{Dataset, Row, SparkSession}
+import org.apache.spark.sql.types.{DataTypes, StructField, StructType}
+
+import java.util.{ArrayList, Arrays, List}
+
+object MyLogisticRegressionExample {
+  def main(args: Array[String]): Unit = {
+    // Khởi tạo một phiên Spark
+    val spark = SparkSession.builder().appName("TextClassification").getOrCreate()
+
+    // Tạo một ArrayList chứa dữ liệu huấn luyện
+    val data: List[Row] = Arrays.asList(
+      Row("Tôi bị bệnh đau đầu, chóng mặt", 1),
+      Row("tôi muốn mua áo mới", 0),
+      // Thêm các dòng dữ liệu khác ở đây
+    )
+
+    // Định nghĩa schema cho DataFrame
+    val schema: StructType = new StructType(Array(
+      new StructField("text", DataTypes.StringType, false),
+      new StructField("label", DataTypes.IntegerType, false)
+    ))
+
+    // Tạo DataFrame từ ArrayList và schema
+    val train_df: Dataset[Row] = spark.createDataFrame(data, schema)
+
+    // Tiền xử lý dữ liệu
+    val tokenizer = new Tokenizer().setInputCol("text").setOutputCol("words")
+    val stopWordsRemover = new StopWordsRemover().setInputCol("words").setOutputCol("filtered_words")
+    val vectorizer = new CountVectorizer().setInputCol("filtered_words").setOutputCol("features")
+    val lr = new LogisticRegression().setFeaturesCol("features").setLabelCol("label")
+
+    // Tạo một pipeline
+    val stages = Array(tokenizer, stopWordsRemover, vectorizer, lr)
+    val pipeline = new Pipeline().setStages(stages)
+
+    // Huấn luyện mô hình
+    val model: PipelineModel = pipeline.fit(train_df)
+
+    // Dữ liệu cần dự đoán
+    val testData: List[Row] = Arrays.asList(
+      Row("tôi cần mua áo và máy tính cho ngày mai", 0),
+      Row("tôi đang bị sốt cao và không biết khi nào thì đau đầu mới hết", 1),
+      // Thêm dữ liệu kiểm tra khác ở đây
+    )
+
+    // Định nghĩa schema cho DataFrame kiểm tra
+    val testSchema: StructType = new StructType(Array(
+      new StructField("text", DataTypes.StringType, false),
+      new StructField("label", DataTypes.IntegerType, false)
+    ))
+
+    // Tạo DataFrame kiểm tra từ ArrayList và schema
+    val test_df: Dataset[Row] = spark.createDataFrame(testData, testSchema)
+
+    // Dự đoán
+    val predictions = model.transform(test_df)
+
+    // Hiển thị kết quả
+    predictions.select("text", "prediction").show()
+
+    // Đóng phiên Spark
+    spark.stop()
+  }
+}
